@@ -17,12 +17,7 @@ export function Header() {
         <h1 className="font-bold text-2xl">Diego Veiga</h1>
       </div>
       <div className="flex gap-2 items-center justify-center">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>Add new user</Button>
-          </DialogTrigger>
-          <CreateUser />
-        </Dialog>
+        <CreateUser />
         <ThemeToggle />
       </div>
     </header>

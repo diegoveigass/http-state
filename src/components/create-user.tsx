@@ -1,7 +1,9 @@
 import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 
 import { Input } from '@/components/ui/input'
@@ -15,6 +17,7 @@ import { useMutation } from '@tanstack/react-query'
 import { createUser } from '@/api/create-user'
 
 import { v4 as uuidv4 } from 'uuid'
+import { useState } from 'react'
 
 const createUserFormSchema = z.object({
   name: z.string(),
@@ -25,13 +28,16 @@ const createUserFormSchema = z.object({
 type createUserFormData = z.infer<typeof createUserFormSchema>
 
 export function CreateUser() {
+  const [dialogOpen, setDialogOpen] = useState(false)
+
   const { handleSubmit, register } = useForm<createUserFormData>({
     resolver: zodResolver(createUserFormSchema),
   })
 
-  const { mutateAsync: createUserFn } = useMutation({
-    mutationFn: createUser,
-  })
+  const { mutateAsync: createUserFn, isPending: createUserLoading } =
+    useMutation({
+      mutationFn: createUser,
+    })
 
   async function handleCreateUser(data: createUserFormData) {
     try {
@@ -44,42 +50,50 @@ export function CreateUser() {
       })
 
       alert('Create user successfully')
+      setDialogOpen(false)
     } catch (error) {
       alert(error)
     }
   }
 
   return (
-    <DialogContent>
-      <DialogTitle>Create user</DialogTitle>
-      <DialogDescription>Create a new user.</DialogDescription>
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={handleSubmit(handleCreateUser)}
-      >
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="name" className="text-right">
-            Name
-          </Label>
-          <Input id="name" className="col-span-3" {...register('name')} />
-        </div>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogTrigger asChild>
+        <Button>Add new user</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogTitle>Create user</DialogTitle>
+        <DialogDescription>Create a new user.</DialogDescription>
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={handleSubmit(handleCreateUser)}
+        >
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Name
+            </Label>
+            <Input id="name" className="col-span-3" {...register('name')} />
+          </div>
 
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="email" className="text-right">
-            Email
-          </Label>
-          <Input id="email" className="col-span-3" {...register('email')} />
-        </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="email" className="text-right">
+              Email
+            </Label>
+            <Input id="email" className="col-span-3" {...register('email')} />
+          </div>
 
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="phone" className="text-right">
-            Phone
-          </Label>
-          <Input id="phone" className="col-span-3" {...register('phone')} />
-        </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="phone" className="text-right">
+              Phone
+            </Label>
+            <Input id="phone" className="col-span-3" {...register('phone')} />
+          </div>
 
-        <Button type="submit">Create user</Button>
-      </form>
-    </DialogContent>
+          <Button disabled={createUserLoading} type="submit">
+            Create user
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
