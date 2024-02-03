@@ -1,6 +1,7 @@
 import './styles/global.css'
 
 import { Button } from '@/components/ui/button'
+import { useQuery } from '@tanstack/react-query'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Table,
@@ -11,25 +12,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useEffect, useState } from 'react'
-import { api } from './lib/axios'
 
-interface User {
-  id: string
-  name: string
-  email: string
-  phone: string
-  status: boolean
-}
+import { Dialog, DialogTrigger } from '@/components/ui/dialog'
+
+import { getUsers } from '@/api/get-users'
+
+import { CreateUser } from '@/components/create-user'
+
+import { ModeToggle } from '@/components/theme-toggle'
 
 export function App() {
-  const [users, setUsers] = useState<User[]>([])
-
-  useEffect(() => {
-    api.get<User[]>('/users').then((response) => setUsers(response.data))
-  }, [])
-
-  console.log(users)
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
+  })
 
   return (
     <div className="flex min-h-screen flex-col antialiased">
@@ -42,7 +38,15 @@ export function App() {
             </Avatar>
             <h1 className="font-bold text-2xl">Diego Veiga</h1>
           </div>
-          <Button>Adicionar novo usuário</Button>
+          <div className="flex gap-2 items-center justify-center">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>Adicionar novo usuário</Button>
+              </DialogTrigger>
+              <CreateUser />
+            </Dialog>
+            <ModeToggle />
+          </div>
         </header>
         <main className="flex-1">
           <Table>
@@ -57,20 +61,19 @@ export function App() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.length > 0 &&
-                users.map((user) => {
-                  return (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.id}</TableCell>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.phone}</TableCell>
-                      <TableCell className="text-right">
-                        {user.status ? '✅' : '❌'}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
+              {users?.map((user) => {
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.id}</TableCell>
+                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phone}</TableCell>
+                    <TableCell className="text-right">
+                      {user.status ? '✅' : '❌'}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </main>
