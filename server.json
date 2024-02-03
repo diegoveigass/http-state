@@ -69,6 +69,13 @@
       "email": "eduardo.alves@example.com",
       "phone": "(21) 70876-5432",
       "status": false
+    },
+    {
+      "id": "7feea258-48d9-4acc-a190-9325788fffc4",
+      "email": "asdasd@asda.com",
+      "name": "adsdasd",
+      "phone": "123132312313",
+      "status": true
     }
   ]
 }
