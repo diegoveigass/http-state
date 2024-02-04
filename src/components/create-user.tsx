@@ -89,7 +89,7 @@ export function CreateUser() {
       setDialogOpen(false)
       reset()
     } catch (error) {
-      toast.error(error)
+      toast.error(String(error))
     }
   }
 
