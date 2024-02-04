@@ -13,16 +13,18 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from './ui/button'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createUser } from '@/api/create-user'
 
 import { v4 as uuidv4 } from 'uuid'
 import { useState } from 'react'
+import { GetUsersResponse } from '@/api/get-users'
+import { toast } from 'sonner'
 
 const createUserFormSchema = z.object({
-  name: z.string(),
-  email: z.string().email(),
-  phone: z.string(),
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().min(1, 'E-mail is required').email('Invalid e-mail format'),
+  phone: z.string().min(1, 'Phone is required'),
 })
 
 type createUserFormData = z.infer<typeof createUserFormSchema>
@@ -30,13 +32,32 @@ type createUserFormData = z.infer<typeof createUserFormSchema>
 export function CreateUser() {
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const { handleSubmit, register } = useForm<createUserFormData>({
+  const queryClient = useQueryClient()
+
+  const {
+    handleSubmit,
+    register,
+    formState: { errors },
+  } = useForm<createUserFormData>({
     resolver: zodResolver(createUserFormSchema),
   })
 
   const { mutateAsync: createUserFn, isPending: createUserLoading } =
     useMutation({
       mutationFn: createUser,
+      async onSuccess(_, variables) {
+        const userListCache = queryClient.getQueriesData<GetUsersResponse>({
+          queryKey: ['users'],
+        })
+
+        userListCache.forEach(([cacheKey, cacheData]) => {
+          if (!cacheData) {
+            return
+          }
+
+          queryClient.setQueryData(cacheKey, [...cacheData, variables])
+        })
+      },
     })
 
   async function handleCreateUser(data: createUserFormData) {
@@ -49,7 +70,7 @@ export function CreateUser() {
         status: true,
       })
 
-      alert('Create user successfully')
+      toast.success('User has been created')
       setDialogOpen(false)
     } catch (error) {
       alert(error)
@@ -72,21 +93,42 @@ export function CreateUser() {
             <Label htmlFor="name" className="text-right">
               Name
             </Label>
-            <Input id="name" className="col-span-3" {...register('name')} />
+            <div className="col-span-3 space-y-1">
+              <Input id="name" {...register('name')} />
+              {errors.name && (
+                <span className="text-sm text-red-800 dark:text-red-500">
+                  {errors.name.message}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="email" className="text-right">
               Email
             </Label>
-            <Input id="email" className="col-span-3" {...register('email')} />
+            <div className="col-span-3 space-y-1">
+              <Input id="email" className="col-span-3" {...register('email')} />
+              {errors.email && (
+                <span className="text-sm text-red-800 dark:text-red-500">
+                  {errors.email.message}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="phone" className="text-right">
               Phone
             </Label>
-            <Input id="phone" className="col-span-3" {...register('phone')} />
+            <div className="col-span-3 space-y-1">
+              <Input id="phone" className="col-span-3" {...register('phone')} />
+              {errors.phone && (
+                <span className="text-sm text-red-800 dark:text-red-500">
+                  {errors.phone.message}
+                </span>
+              )}
+            </div>
           </div>
 
           <Button disabled={createUserLoading} type="submit">
