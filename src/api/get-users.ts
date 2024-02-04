@@ -1,6 +1,10 @@
 import { api } from '../lib/axios'
 
-export type GetUsersResponse = {
+interface GetUserProps {
+  page: number
+}
+
+export type UsersResponse = {
   id: string
   name: string
   email: string
@@ -8,8 +12,22 @@ export type GetUsersResponse = {
   status: boolean
 }[]
 
-export async function getUsers() {
-  const response = await api.get<GetUsersResponse>('/users')
+export type GetUsersResponse = {
+  first: number
+  prev: number | null
+  next: number | null
+  last: number
+  pages: number
+  items: number
+  data: UsersResponse
+}
+
+export async function getUsers({ page }: GetUserProps) {
+  const response = await api.get<GetUsersResponse>('/users', {
+    params: {
+      _page: page,
+    },
+  })
 
   return response.data
 }

@@ -13,13 +13,14 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from './ui/button'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { createUser } from '@/api/create-user'
 
 import { v4 as uuidv4 } from 'uuid'
 import { useState } from 'react'
-import { GetUsersResponse } from '@/api/get-users'
+import { GetUsersResponse, getUsers } from '@/api/get-users'
 import { toast } from 'sonner'
+import { useSearchParams } from 'react-router-dom'
 
 const createUserFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -32,12 +33,22 @@ type createUserFormData = z.infer<typeof createUserFormSchema>
 export function CreateUser() {
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  const [searchParams] = useSearchParams()
+
+  const page = z.coerce.number().parse(searchParams.get('_page') ?? '1')
+
+  const { data: result } = useQuery({
+    queryKey: ['users', page],
+    queryFn: () => getUsers({ page }),
+  })
+
   const queryClient = useQueryClient()
 
   const {
     handleSubmit,
     register,
     formState: { errors },
+    reset,
   } = useForm<createUserFormData>({
     resolver: zodResolver(createUserFormSchema),
   })
@@ -47,7 +58,7 @@ export function CreateUser() {
       mutationFn: createUser,
       async onSuccess(_, variables) {
         const userListCache = queryClient.getQueriesData<GetUsersResponse>({
-          queryKey: ['users'],
+          queryKey: ['users', result?.pages],
         })
 
         userListCache.forEach(([cacheKey, cacheData]) => {
@@ -55,7 +66,11 @@ export function CreateUser() {
             return
           }
 
-          queryClient.setQueryData(cacheKey, [...cacheData, variables])
+          queryClient.setQueryData(cacheKey, {
+            ...cacheData,
+            items: cacheData.items + 1,
+            data: [...cacheData.data, variables],
+          })
         })
       },
     })
@@ -72,8 +87,9 @@ export function CreateUser() {
 
       toast.success('User has been created')
       setDialogOpen(false)
+      reset()
     } catch (error) {
-      alert(error)
+      toast.error(error)
     }
   }
 

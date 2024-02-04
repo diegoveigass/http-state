@@ -8,15 +8,32 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+import { Pagination } from '@/components/ui/pagination'
+
+import { useSearchParams } from 'react-router-dom'
+import { z } from 'zod'
+
 import { useQuery } from '@tanstack/react-query'
 
 import { getUsers } from '@/api/get-users'
 
 export function Home() {
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: getUsers,
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const page = z.coerce.number().parse(searchParams.get('_page') ?? '1')
+
+  const { data: result } = useQuery({
+    queryKey: ['users', page],
+    queryFn: () => getUsers({ page }),
   })
+
+  function handlePaginate(page: number) {
+    setSearchParams((prev) => {
+      prev.set('_page', page.toString())
+
+      return prev
+    })
+  }
 
   return (
     <main className="flex-1">
@@ -32,7 +49,7 @@ export function Home() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users?.map((user) => {
+          {result?.data.map((user) => {
             return (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.id}</TableCell>
@@ -47,6 +64,14 @@ export function Home() {
           })}
         </TableBody>
       </Table>
+      {result && (
+        <Pagination
+          page={page}
+          totalCount={result.items}
+          pages={result.pages}
+          onPageChange={handlePaginate}
+        />
+      )}
     </main>
   )
 }
