@@ -16,15 +16,20 @@ import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 
 import { getUsers } from '@/api/get-users'
+import { FilterUser } from '@/components/filter-user'
 
 export function Home() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const page = z.coerce.number().parse(searchParams.get('_page') ?? '1')
 
+  const userName = searchParams.get('userName') ?? ''
+  const userEmail = searchParams.get('userEmail') ?? ''
+  const userPhone = searchParams.get('userPhone') ?? ''
+
   const { data: result } = useQuery({
-    queryKey: ['users', page],
-    queryFn: () => getUsers({ page }),
+    queryKey: ['users', page, userName, userEmail, userPhone],
+    queryFn: () => getUsers({ page, userName, userEmail, userPhone }),
   })
 
   function handlePaginate(page: number) {
@@ -36,7 +41,9 @@ export function Home() {
   }
 
   return (
-    <main className="flex-1">
+    <main className="flex-1 space-y-3">
+      <FilterUser />
+
       <Table>
         <TableCaption>A list of users registred in app.</TableCaption>
         <TableHeader>
